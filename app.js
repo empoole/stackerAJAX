@@ -6,6 +6,12 @@ $(document).ready( function() {
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
 	});
+
+	$('.inspiration-getter').submit(function(event) {
+		$('.results').html('');
+		var tags = $(this).find("input[name='answerers']").val();
+		getInspired(tags);
+	});
 });
 
 // this function takes the question object returned by StackOverflow 
@@ -41,6 +47,25 @@ var showQuestion = function(question) {
 	return result;
 };
 
+
+function showAnswerer(answerer) {
+	var result = $('.templates .answerer').clone();
+
+	var answererElem = result.find('.answerer-name a');
+	answererElem.attr('href', answerer.user.link);
+	answererElem.text(answerer.user.display_name);
+
+	var answererType = result.find('.answerer-type');
+	answererType.text(answerer.user.user_type);
+
+	var answererRep = result.find('.answerer-reputation');
+	answererRep.text(answerer.user.reputation);
+
+	var answererPostCount = result.find('.answerer-post-count');
+	answererPostCount.text(answerer.post_count);
+
+	return result;
+}
 
 // this function takes the results object from StackOverflow
 // and creates info about search results to be appended to DOM
@@ -89,4 +114,30 @@ var getUnanswered = function(tags) {
 };
 
 
+function getInspired(tags) {
+	
+	//request holds data that will be passed as a query string
+	//the data property of the jquery ajax function takes data that will be passed as a query string
+	var request = {site: 'stackoverflow'};
 
+	var result = $.ajax({
+		url: 'http://api.stackexchange.com/2.2/tags/' + tags + '/top-answerers/all_time',
+		data: request,
+		dataType: 'jsonp',
+		type: 'GET' 
+		})
+		.done(function(result) {
+			var searchResults = showSearchResults(tags, result.items.length);
+
+			$('.search-results').html(searchResults);
+
+			$.each(result.items, function(i, item) {
+				var answerer = showAnswerer(item);
+				$('.results').append(answerer);
+			});
+		})
+		.fail(function(jqXHR, error, errorThrown){
+			var errorElem = showError(error);
+			$('.search-results').append(errorElem);
+		});
+}
